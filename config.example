@@ -1,0 +1,9 @@
+# Data directory
+data_dir: .
+
+# Channels to process
+channels:
+- id: bbc1.bbc.co.uk
+- id: bbc2.bbc.co.uk
+- id: bbc3.bbc.co.uk
+- id: bbc4.bbc.co.uk
