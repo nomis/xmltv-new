@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from tzlocal import get_localzone
 from xml.sax.saxutils import XMLGenerator
 import collections
@@ -146,16 +146,21 @@ def main(config="config", base=os.getcwd()):
 	config = yaml.safe_load(open(os.path.join(base, config), "rt", encoding="UTF-8"))
 	config.setdefault("data_dir", os.getcwd())
 	config.setdefault("channels", [])
+	config.setdefault("days", 0)
 
 	channels = dict.fromkeys([channel["id"] for channel in config["channels"]], "")
 	programmes = []
+	future = None
+	if config["days"] > 0:
+		future = now + timedelta(days=config["days"])
 
 	for root, dirs, files in os.walk(config["data_dir"]):
 		del dirs[:]
 		files = sorted(list(filter(fname_re.search, files)))
 
 		for file in files:
-			if tz.localize(datetime.strptime(fname_re.match(file).group(1), "%Y%m%d")) >= now:
+			ts = tz.localize(datetime.strptime(fname_re.match(file).group(1), "%Y%m%d"))
+			if ts >= now and not future or ts <= future:
 				programmes += process(channels, os.path.join(config["data_dir"], file))
 
 	programmes = sorted(programmes, key=operator.itemgetter("start", "stop", "channel", "title", "subtitle"), reverse=True)

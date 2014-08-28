@@ -1,6 +1,9 @@
 # Data directory
 data_dir: .
 
+# Maximum days in the future
+days: 8
+
 # Channels to process
 channels:
 - id: bbc1.bbc.co.uk
