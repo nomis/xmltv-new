@@ -160,7 +160,7 @@ def main(config="config", base=os.getcwd()):
 
 		for file in files:
 			ts = tz.localize(datetime.strptime(fname_re.match(file).group(1), "%Y%m%d"))
-			if ts >= now and not future or ts <= future:
+			if ts >= now and (not future or ts <= future):
 				programmes += process(channels, os.path.join(config["data_dir"], file))
 
 	programmes = sorted(programmes, key=operator.itemgetter("start", "stop", "channel", "title", "subtitle"), reverse=True)
