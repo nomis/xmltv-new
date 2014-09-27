@@ -115,6 +115,11 @@ def output(channels, data):
 		g.characters(programme["desc"])
 		g.endElement("p")
 
+		g.startElement("p", {})
+		g.characters("Duration: ")
+		g.characters(str(programme["stop"] - programme["start"]))
+		g.endElement("p")
+
 		if programme["directors"]:
 			g.characters("Directors:")
 			g.startElement("ul", {})
