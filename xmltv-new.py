@@ -37,32 +37,32 @@ tag = "tag:xmltv-new.uuid.uk,2014-07-04:"
 now = tz.localize(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None))
 
 def process(channels, file):
-		tree = ET.parse(file)
-		root = tree.getroot()
-		programmes = []
+	tree = ET.parse(file)
+	root = tree.getroot()
+	programmes = []
 
-		for channel in root.findall("./channel"):
-			id = channel.get("id")
-			if id in channels:
-				channels[id] = channel.findtext("display-name", default="")
+	for channel in root.findall("./channel"):
+		id = channel.get("id")
+		if id in channels:
+			channels[id] = channel.findtext("display-name", default="")
 
-		for programme in root.findall("./programme/new/.."):
-			channel = programme.get("channel")
-			if channel in channels:
-				data = {}
-				data["channel"] = channel
-				data["start"] = tz.localize(datetime.strptime(programme.get("start"), ts_fmt))
-				data["stop"] = tz.localize(datetime.strptime(programme.get("stop"), ts_fmt))
-				data["title"] = programme.findtext("title", default="")
-				data["subtitle"] = programme.findtext("sub-title", default="")
-				data["desc"] = programme.findtext("desc", default="")
-				data["categories"] = [x.text for x in programme.findall("category")]
-				data["directors"] = [x.text for x in programme.findall("credits/director")]
-				data["actors"] = [x.text for x in programme.findall("credits/actor")]
+	for programme in root.findall("./programme/new/.."):
+		channel = programme.get("channel")
+		if channel in channels:
+			data = {}
+			data["channel"] = channel
+			data["start"] = tz.localize(datetime.strptime(programme.get("start"), ts_fmt))
+			data["stop"] = tz.localize(datetime.strptime(programme.get("stop"), ts_fmt))
+			data["title"] = programme.findtext("title", default="")
+			data["subtitle"] = programme.findtext("sub-title", default="")
+			data["desc"] = programme.findtext("desc", default="")
+			data["categories"] = [x.text for x in programme.findall("category")]
+			data["directors"] = [x.text for x in programme.findall("credits/director")]
+			data["actors"] = [x.text for x in programme.findall("credits/actor")]
 
-				programmes.append(data)
+			programmes.append(data)
 
-		return programmes
+	return programmes
 
 def output(channels, data):
 	g = XMLGenerator(sys.stdout, "UTF-8")
