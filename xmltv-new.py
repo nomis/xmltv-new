@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-#  xmltv-new - XMLTV new series notifier
+#  xmltv-new - XMLTV new series/premiere notifier
 #
-#  Copyright ©2014 Simon Arlott
+#  Copyright ©2014-2016 Simon Arlott
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 from datetime import datetime, timedelta
 from tzlocal import get_localzone
 from xml.sax.saxutils import XMLGenerator
+import argparse
 import collections
 import hashlib
 import re
@@ -36,7 +37,7 @@ tag = "tag:xmltv-new.uuid.uk,2014-07-04:"
 
 now = tz.localize(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None))
 
-def process(channels, file):
+def process(channels, file, args):
 	tree = ET.parse(file)
 	root = tree.getroot()
 	programmes = []
@@ -46,7 +47,15 @@ def process(channels, file):
 		if id in channels:
 			channels[id] = channel.findtext("display-name", default="")
 
-	for programme in root.findall("./programme/new/.."):
+	if args.mode == "series":
+		matches = root.findall("./programme/new/..")
+	elif args.mode == "premiere":
+		matches = []
+		for programme in root.findall("./programme"):
+			if programme.findtext("desc", default="").startswith("Premiere."):
+				matches.append(programme)
+
+	for programme in matches:
 		channel = programme.get("channel")
 		if channel in channels:
 			data = {}
@@ -64,7 +73,7 @@ def process(channels, file):
 
 	return programmes
 
-def output(channels, data):
+def output(channels, data, args):
 	g = XMLGenerator(sys.stdout, "UTF-8")
 	g.startDocument()
 	print()
@@ -72,7 +81,7 @@ def output(channels, data):
 	g.startElement("feed", {"xmlns": "http://www.w3.org/2005/Atom"})
 
 	g.startElement("title", {})
-	g.characters("XMLTV new series")
+	g.characters("XMLTV " + {"series": "new series", "premiere": "premieres"}[args.mode])
 	g.endElement("title")
 
 	g.startElement("id", {})
@@ -148,6 +157,10 @@ def output(channels, data):
 	print()
 
 def main(config="config", base=os.getcwd()):
+	parser = argparse.ArgumentParser(description="XMLTV new")
+	parser.add_argument("mode", choices=["series", "premiere"])
+	args = parser.parse_args()
+
 	config = yaml.safe_load(open(os.path.join(base, config), "rt", encoding="UTF-8"))
 	config.setdefault("data_dir", os.getcwd())
 	config.setdefault("channels", [])
@@ -166,10 +179,10 @@ def main(config="config", base=os.getcwd()):
 		for file in files:
 			ts = tz.localize(datetime.strptime(fname_re.match(file).group(1), "%Y%m%d"))
 			if ts >= now and (not future or ts <= future):
-				programmes += process(channels, os.path.join(config["data_dir"], file))
+				programmes += process(channels, os.path.join(config["data_dir"], file), args)
 
 	programmes = sorted(programmes, key=operator.itemgetter("start", "stop", "channel", "title", "subtitle"), reverse=True)
-	output(channels, programmes)
+	output(channels, programmes, args)
 
 if __name__ == "__main__":
 	main()
